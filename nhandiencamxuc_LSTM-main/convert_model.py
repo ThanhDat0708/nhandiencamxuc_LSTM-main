@@ -1,5 +1,15 @@
-import tensorflow as tf
 import os
+import sys
+
+try:
+    import tensorflow as tf
+except ModuleNotFoundError:
+    print("❌ Không tìm thấy TensorFlow trong Python hiện tại.")
+    print("\n💡 Dự án này cần Python 3.13 và TensorFlow 2.20.0 hoặc mới hơn tương thích với 3.13.")
+    print("   Gợi ý chạy:")
+    print("   py -3.13 -m pip install -r requirements.txt")
+    print("   py -3.13 convert_model.py")
+    sys.exit(1)
 
 model_path = "model/speech_emotion_lstm_improved.keras"
 saved_model_path = "model/saved_model"

@@ -17,20 +17,27 @@ Bạn có thể test hệ thống nhận diện cảm xúc từ giọng nói qua
 Chỉ cần upload file âm thanh (định dạng: WAV, MP3, OGG) và hệ thống sẽ tự động phân loại cảm xúc.
 
 ## 🛠️ Yêu Cầu Kỹ Thuật
-- Python 3.7+
-- TensorFlow/Keras
+- Python 3.13
+- TensorFlow/Keras 2.20.0+
 - Librosa (xử lý âm thanh)
 - Streamlit
 - NumPy, Pandas
 
 ## 📦 Cài Đặt
 ```bash
-pip install -r requirements.txt
+py -3.13 -m pip install -r requirements.txt
+```
+
+Nếu `py` mặc định của máy đang trỏ sang Python 3.14, hãy luôn thêm `-3.13` khi cài đặt hoặc chạy dự án.
+
+## 🔄 Chuyển Model
+```bash
+py -3.13 convert_model.py
 ```
 
 ## 🎬 Chạy Ứng Dụng Streamlit Cục Bộ
 ```bash
-streamlit run app.py
+py -3.13 -m streamlit run app.py
 ```
 
 ## 📊 Dữ Liệu

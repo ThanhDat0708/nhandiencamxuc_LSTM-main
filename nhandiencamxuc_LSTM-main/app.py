@@ -1,9 +1,17 @@
 import streamlit as st
-import tensorflow as tf
 import numpy as np
 import os
 import tempfile
 from pathlib import Path
+
+try:
+    import tensorflow as tf
+except ModuleNotFoundError:
+    st.error(
+        "Không tìm thấy TensorFlow trong Python hiện tại. "
+        "Hãy dùng Python 3.13 và cài dependencies bằng `py -3.13 -m pip install -r requirements.txt`."
+    )
+    st.stop()
 
 # Import đúng từ utils
 from utils.feature_extraction import extract_features
