@@ -30,8 +30,18 @@ try:
     )
     print("✅ Load model thành công!")
 
-    # Lưu lại dưới dạng SavedModel
-    tf.saved_model.save(model, saved_model_path)
+    # Dùng lại SavedModel đã có nếu nó hợp lệ, tránh export lại không cần thiết
+    if os.path.exists(saved_model_path):
+        tf.saved_model.load(saved_model_path)
+        print(f"✅ SavedModel đã tồn tại và load được tại: {saved_model_path}")
+        print("Bạn có thể chạy app.py ngay bây giờ.")
+        sys.exit(0)
+
+    # Lưu lại dưới dạng SavedModel bằng API phù hợp với Keras 3
+    if hasattr(model, "export"):
+        model.export(saved_model_path)
+    else:
+        tf.saved_model.save(model, saved_model_path)
     print(f"✅ Đã chuyển đổi và lưu SavedModel tại: {saved_model_path}")
     print("Bạn có thể chạy app.py ngay bây giờ.")
 
