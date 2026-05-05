@@ -28,14 +28,18 @@ from tensorflow.keras.utils import to_categorical
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from utils.preprocessing import extract_mfcc_only
 
-# 4 lớp cố định đúng với app hiện tại
-CLASS_ORDER = ["Angry", "Happy", "Sad", "Neutral"]
+# 8 lớp RAVDESS chuẩn
+CLASS_ORDER = ["Neutral", "Calm", "Happy", "Sad", "Angry", "Fearful", "Disgust", "Surprised"]
 CLASS_TO_INDEX = {name: idx for idx, name in enumerate(CLASS_ORDER)}
 RAVDESS_TO_CLASS = {
-    "05": "Angry",
+    "01": "Neutral",
+    "02": "Calm",
     "03": "Happy",
     "04": "Sad",
-    "01": "Neutral",
+    "05": "Angry",
+    "06": "Fearful",
+    "07": "Disgust",
+    "08": "Surprised",
 }
 FILE_PATTERN = re.compile(r"^(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{2})\.wav$", re.IGNORECASE)
 
@@ -87,7 +91,7 @@ def build_dataset(data_root: Path):
     return x, y, skipped
 
 
-def build_model(input_shape=(220, 40), num_classes=4):
+def build_model(input_shape=(220, 40), num_classes=8):
     model = Sequential([
         Input(shape=input_shape),
         BatchNormalization(),
@@ -116,7 +120,7 @@ def build_model(input_shape=(220, 40), num_classes=4):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Train a 4-class RAVDESS speech emotion model.")
+    parser = argparse.ArgumentParser(description="Train an 8-class RAVDESS speech emotion model.")
     parser.add_argument(
         "--data-root",
         type=str,
@@ -126,7 +130,7 @@ def main():
     parser.add_argument(
         "--output-model",
         type=str,
-        default="model/speech_emotion_lstm_4classes.keras",
+        default="model/speech_emotion_lstm_8classes.keras",
         help="Đường dẫn model đầu ra.",
     )
     parser.add_argument("--epochs", type=int, default=60)
@@ -220,7 +224,7 @@ def main():
             {
                 "class_order": CLASS_ORDER,
                 "class_to_index": CLASS_TO_INDEX,
-                "source": "RAVDESS 4-class subset",
+                "source": "RAVDESS 8-class subset",
             },
             f,
             ensure_ascii=False,

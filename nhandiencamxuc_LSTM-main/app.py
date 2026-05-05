@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import os
+import json
 import tempfile
 from pathlib import Path
 
@@ -41,12 +42,58 @@ st.set_page_config(
 
 st.title("🎤 Hệ Thống Nhận Diện Cảm Xúc Qua Giọng Nói")
 
-# Mô hình này chỉ dùng 4 lớp cảm xúc
-EMOTIONS = ["Angry", "Happy", "Sad", "Neutral"]
-EMOTIONS_VI = ["Tức giận", "Vui vẻ", "Buồn", "Trung lập"]
-st.markdown(
-    "**Model**: CNN + Bidirectional LSTM | 4 lớp: Angry, Happy, Sad, Neutral"
-)
+DEFAULT_CLASS_ORDER_4 = ["Angry", "Happy", "Sad", "Neutral"]
+DEFAULT_CLASS_ORDER_4_VI = ["Tức giận", "Vui vẻ", "Buồn", "Trung lập"]
+DEFAULT_CLASS_ORDER_8 = ["Neutral", "Calm", "Happy", "Sad", "Angry", "Fearful", "Disgust", "Surprised"]
+DEFAULT_CLASS_ORDER_8_VI = ["Trung lập", "Bình tĩnh", "Vui vẻ", "Buồn", "Tức giận", "Sợ hãi", "Ghê tởm", "Ngạc nhiên"]
+DEFAULT_VI_TRANSLATIONS = {
+    "Angry": "Tức giận",
+    "Calm": "Bình tĩnh",
+    "Disgust": "Ghê tởm",
+    "Fearful": "Sợ hãi",
+    "Happy": "Vui vẻ",
+    "Neutral": "Trung lập",
+    "Sad": "Buồn",
+    "Surprised": "Ngạc nhiên",
+}
+
+
+def _load_class_labels_from_sidecar(model_path: str):
+    label_path = Path(model_path).with_suffix(".labels.json")
+    if not label_path.exists():
+        return None
+
+    try:
+        with label_path.open("r", encoding="utf-8") as f:
+            payload = json.load(f)
+        class_order = payload.get("class_order")
+        if isinstance(class_order, list) and class_order:
+            return class_order
+    except Exception:
+        return None
+
+    return None
+
+
+def _resolve_class_labels(model, model_path: str):
+    output_units = int(model.output_shape[-1])
+    class_order = _load_class_labels_from_sidecar(model_path)
+
+    if class_order and len(class_order) == output_units:
+        class_order_vi = [DEFAULT_VI_TRANSLATIONS.get(name, name) for name in class_order]
+        return class_order, class_order_vi
+
+    if output_units == 8:
+        return DEFAULT_CLASS_ORDER_8, DEFAULT_CLASS_ORDER_8_VI
+
+    if output_units == 4:
+        return DEFAULT_CLASS_ORDER_4, DEFAULT_CLASS_ORDER_4_VI
+
+    fallback_labels = [f"Class {index + 1}" for index in range(output_units)]
+    return fallback_labels, fallback_labels
+
+
+st.markdown("**Model**: CNN + Bidirectional LSTM | hỗ trợ 4 hoặc 8 lớp tùy model được nạp")
 
 
 def predict_audio_file(audio_path: str, use_trimmed_features: bool = True):
@@ -104,8 +151,9 @@ def predict_audio_file(audio_path: str, use_trimmed_features: bool = True):
 @st.cache_resource(show_spinner="Đang tải model...")
 def load_model():
     model_candidates = [
-        "model/speech_emotion_lstm_4classes.keras",
+        "model/speech_emotion_lstm_8classes.keras",
         "model/speech_emotion_lstm_improved.keras",
+        "model/speech_emotion_lstm_4classes.keras",
     ]
 
     for model_path in model_candidates:
@@ -115,14 +163,15 @@ def load_model():
         try:
             model = tf.keras.models.load_model(model_path, compile=False)
             st.success(f"✅ Model loaded successfully: {model_path}")
-            return model
+            class_order, class_order_vi = _resolve_class_labels(model, model_path)
+            return model, class_order, class_order_vi
         except Exception as e:
             st.warning(f"Không load được {model_path}: {e}")
 
     st.error("❌ Không tìm thấy model hợp lệ.")
     st.stop()
 
-model = load_model()
+model, CLASS_ORDER, CLASS_ORDER_VI = load_model()
 
 # ========================= SIDEBAR =========================
 with st.sidebar:
@@ -130,7 +179,7 @@ with st.sidebar:
     use_vietnamese = st.checkbox("Hiển thị bằng tiếng Việt", value=True)
     st.markdown("---")
     feature_mode = st.radio("Chế độ trích xuất đặc trưng", ("raw", "trimmed", "ensemble"), index=0)
-    st.caption("Phân loại 4 lớp: Angry / Happy / Sad / Neutral")
+    st.caption(f"Phân loại {len(CLASS_ORDER)} lớp: {' / '.join(CLASS_ORDER)}")
     # Debug: show model info and a test prediction
     if st.checkbox("Hiện thông tin model (debug)"):
         import io, sys
@@ -177,7 +226,7 @@ with col1:
                     if prediction is None:
                         st.error("Không trích xuất được đặc trưng hợp lệ từ file âm thanh.")
                     else:
-                        emotion = EMOTIONS_VI[predicted_idx] if use_vietnamese else EMOTIONS[predicted_idx]
+                        emotion = CLASS_ORDER_VI[predicted_idx] if use_vietnamese else CLASS_ORDER[predicted_idx]
 
                         st.success(f"**Cảm xúc dự đoán: {emotion}**")
                         st.metric("Độ tin cậy", f"{confidence * 100:.1f}%")
@@ -185,8 +234,8 @@ with col1:
 
                         # Biểu đồ & debug
                         st.subheader("📊 Xác suất các cảm xúc")
-                        prob_dict = {(EMOTIONS_VI[i] if use_vietnamese else EMOTIONS[i]): float(prediction[i] * 100)
-                                    for i in range(4)}
+                        prob_dict = {(CLASS_ORDER_VI[i] if use_vietnamese else CLASS_ORDER[i]): float(prediction[i] * 100)
+                                    for i in range(len(CLASS_ORDER))}
                         st.bar_chart(prob_dict)
                         st.markdown("**Raw probabilities:**")
                         st.write([float(p) for p in prediction])
@@ -243,7 +292,7 @@ with col2:
                 if prediction is None:
                     st.error("Không trích xuất được đặc trưng hợp lệ từ mic.")
                 else:
-                    emotion = EMOTIONS_VI[predicted_idx] if use_vietnamese else EMOTIONS[predicted_idx]
+                    emotion = CLASS_ORDER_VI[predicted_idx] if use_vietnamese else CLASS_ORDER[predicted_idx]
 
                     st.success(f"**Cảm xúc dự đoán: {emotion}**")
                     st.metric("Độ tin cậy", f"{confidence * 100:.1f}%")

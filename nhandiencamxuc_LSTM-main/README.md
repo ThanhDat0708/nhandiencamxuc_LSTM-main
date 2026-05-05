@@ -4,7 +4,7 @@
 Hệ thống nhận diện cảm xúc từ giọng nói (Speech Emotion Recognition) sử dụng mô hình LSTM (Long Short-Term Memory). Dự án này kết hợp xử lý tín hiệu âm thanh và deep learning để phân loại cảm xúc từ các file âm thanh.
 
 ## 🎯 Tính Năng
-- **Nhận diện cảm xúc**: Phân loại cảm xúc từ giọng nói (vui vẻ, buồn, tức giận, bình tĩnh, v.v.)
+- **Nhận diện cảm xúc**: Phân loại 8 cảm xúc từ giọng nói (neutral, calm, happy, sad, angry, fearful, disgust, surprised)
 - **Xử lý âm thanh**: Trích xuất đặc trưng MFCC từ file âm thanh
 - **Mô hình Deep Learning**: Sử dụng LSTM để học các mẫu cảm xúc phức tạp
 - **Giao diện Web**: Ứng dụng Streamlit dễ sử dụng để test hệ thống
@@ -15,6 +15,7 @@ Bạn có thể test hệ thống nhận diện cảm xúc từ giọng nói qua
 🔗 **[Test hệ thống tại đây](https://nhandiencamxuclstm-ufgyhsghjbfrqjon9w2rsu.streamlit.app/)**
 
 Chỉ cần upload file âm thanh (định dạng: WAV, MP3, OGG) và hệ thống sẽ tự động phân loại cảm xúc.
+Mô hình huấn luyện mặc định hiện nhắm tới 8 lớp RAVDESS.
 
 ## 🛠️ Yêu Cầu Kỹ Thuật
 - Python 3.13

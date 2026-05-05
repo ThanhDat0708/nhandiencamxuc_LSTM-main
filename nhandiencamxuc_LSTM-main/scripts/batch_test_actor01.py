@@ -5,7 +5,8 @@ import tensorflow as tf
 
 from utils.feature_extraction import extract_features
 
-EMOTIONS = ["Angry", "Happy", "Sad", "Neutral"]
+EMOTIONS = ["Neutral", "Calm", "Happy", "Sad", "Angry", "Fearful", "Disgust", "Surprised"]
+EMOTIONS_VI = ["Trung lập", "Bình tĩnh", "Vui vẻ", "Buồn", "Tức giận", "Sợ hãi", "Ghê tởm", "Ngạc nhiên"]
 
 RAVDESS_MAP = {
     "01": "Neutral",
@@ -32,7 +33,7 @@ model = tf.keras.models.load_model('model/speech_emotion_lstm_improved.keras', c
 folder = Path(r'e:\Actor_01')
 files = sorted(folder.glob('*.wav'))[:20]
 
-print('File | TrueLabel | PredIdx | PredLabel | Probs')
+print('File | TrueLabel | PredIdx | PredLabel | PredLabelVI | Probs')
 for path in files:
     feats = extract_features(str(path))
     if feats is None:
@@ -41,4 +42,4 @@ for path in files:
     pred = model.predict(feats, verbose=0)[0]
     idx = int(np.argmax(pred))
     probs = [round(float(x), 4) for x in pred]
-    print(f'{path.name} | {parse_label(path.name)} | {idx} | {EMOTIONS[idx]} | {probs}')
+    print(f'{path.name} | {parse_label(path.name)} | {idx} | {EMOTIONS[idx]} | {EMOTIONS_VI[idx]} | {probs}')
