@@ -1,0 +1,23 @@
+{
+  "class_order": [
+    "Neutral",
+    "Calm",
+    "Happy",
+    "Sad",
+    "Angry",
+    "Fearful",
+    "Disgust",
+    "Surprised"
+  ],
+  "class_to_index": {
+    "Neutral": 0,
+    "Calm": 1,
+    "Happy": 2,
+    "Sad": 3,
+    "Angry": 4,
+    "Fearful": 5,
+    "Disgust": 6,
+    "Surprised": 7
+  },
+  "source": "RAVDESS 8-class subset"
+}
