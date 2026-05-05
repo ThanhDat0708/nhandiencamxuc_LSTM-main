@@ -91,6 +91,26 @@ def build_dataset(data_root: Path):
     return x, y, skipped
 
 
+def summarize_label_counts(y: np.ndarray):
+    counts = Counter(y.tolist())
+    return {CLASS_ORDER[index]: int(counts.get(index, 0)) for index in range(len(CLASS_ORDER))}
+
+
+def validate_all_classes_present(y: np.ndarray):
+    counts = summarize_label_counts(y)
+    missing = [label for label, count in counts.items() if count == 0]
+    if missing:
+        raise ValueError(
+            "Dataset không đủ 8 lớp cảm xúc. "
+            f"Thiếu: {missing}. "
+            "Hãy trỏ --data-root tới thư mục RAVDESS đầy đủ (có đủ Actor_*)."
+        )
+
+    min_count = min(counts.values())
+    if min_count < 10:
+        print("⚠️ Cảnh báo: có lớp quá ít mẫu (<10). Model dễ bị lệch dự đoán.")
+
+
 def build_model(input_shape=(220, 40), num_classes=8):
     model = Sequential([
         Input(shape=input_shape),
@@ -138,6 +158,11 @@ def main():
     parser.add_argument("--test-size", type=float, default=0.15)
     parser.add_argument("--val-size", type=float, default=0.15)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--allow-missing-classes",
+        action="store_true",
+        help="Cho phép train khi thiếu một số lớp cảm xúc (không khuyến nghị).",
+    )
     args = parser.parse_args()
 
     set_seed(args.seed)
@@ -149,7 +174,11 @@ def main():
     print(f"Đang quét dữ liệu từ: {data_root}")
     x, y, skipped = build_dataset(data_root)
     print(f"Tổng file hợp lệ: {len(x)} | Bỏ qua: {skipped}")
-    print("Phân bố nhãn:", Counter(y))
+    counts = summarize_label_counts(y)
+    print("Phân bố nhãn theo lớp:", counts)
+
+    if not args.allow_missing_classes:
+        validate_all_classes_present(y)
 
     y_onehot = to_categorical(y, num_classes=len(CLASS_ORDER))
 

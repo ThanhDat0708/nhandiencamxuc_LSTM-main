@@ -164,18 +164,22 @@ def load_model():
             model = tf.keras.models.load_model(model_path, compile=False)
             st.success(f"✅ Model loaded successfully: {model_path}")
             class_order, class_order_vi = _resolve_class_labels(model, model_path)
-            return model, class_order, class_order_vi
+            return model, class_order, class_order_vi, model_path
         except Exception as e:
             st.warning(f"Không load được {model_path}: {e}")
 
     st.error("❌ Không tìm thấy model hợp lệ.")
     st.stop()
 
-model, CLASS_ORDER, CLASS_ORDER_VI = load_model()
+model, CLASS_ORDER, CLASS_ORDER_VI, MODEL_PATH = load_model()
 
 # ========================= SIDEBAR =========================
 with st.sidebar:
     st.header("⚙️ Cài đặt")
+    st.caption(f"Model đang dùng: {MODEL_PATH}")
+    st.caption(f"Số lớp phát hiện: {len(CLASS_ORDER)}")
+    if len(CLASS_ORDER) != 8:
+        st.error("Bạn chưa nạp model 8 lớp. Hãy train và lưu model/speech_emotion_lstm_8classes.keras")
     use_vietnamese = st.checkbox("Hiển thị bằng tiếng Việt", value=True)
     st.markdown("---")
     feature_mode = st.radio("Chế độ trích xuất đặc trưng", ("raw", "trimmed", "ensemble"), index=0)
