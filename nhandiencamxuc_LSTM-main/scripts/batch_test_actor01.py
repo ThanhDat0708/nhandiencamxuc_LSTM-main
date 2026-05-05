@@ -1,9 +1,12 @@
 from pathlib import Path
 import json
 import re
+import sys
 import numpy as np
 import tensorflow as tf
 
+# Ensure imports like `utils.*` work regardless of launch directory.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from utils.feature_extraction import extract_features
 
 DEFAULT_CLASS_ORDER_4 = ["Angry", "Happy", "Sad", "Neutral"]
