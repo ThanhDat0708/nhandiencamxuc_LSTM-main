@@ -1,12 +1,50 @@
 from pathlib import Path
+import json
 import re
 import numpy as np
 import tensorflow as tf
 
 from utils.feature_extraction import extract_features
 
-EMOTIONS = ["Neutral", "Calm", "Happy", "Sad", "Angry", "Fearful", "Disgust", "Surprised"]
-EMOTIONS_VI = ["Trung lập", "Bình tĩnh", "Vui vẻ", "Buồn", "Tức giận", "Sợ hãi", "Ghê tởm", "Ngạc nhiên"]
+DEFAULT_CLASS_ORDER_4 = ["Angry", "Happy", "Sad", "Neutral"]
+DEFAULT_CLASS_ORDER_4_VI = ["Tức giận", "Vui vẻ", "Buồn", "Trung lập"]
+DEFAULT_CLASS_ORDER_8 = ["Neutral", "Calm", "Happy", "Sad", "Angry", "Fearful", "Disgust", "Surprised"]
+DEFAULT_CLASS_ORDER_8_VI = ["Trung lập", "Bình tĩnh", "Vui vẻ", "Buồn", "Tức giận", "Sợ hãi", "Ghê tởm", "Ngạc nhiên"]
+DEFAULT_VI_TRANSLATIONS = {
+    "Angry": "Tức giận",
+    "Calm": "Bình tĩnh",
+    "Disgust": "Ghê tởm",
+    "Fearful": "Sợ hãi",
+    "Happy": "Vui vẻ",
+    "Neutral": "Trung lập",
+    "Sad": "Buồn",
+    "Surprised": "Ngạc nhiên",
+}
+
+
+def resolve_class_labels(model, model_path: str):
+    label_path = Path(model_path).with_suffix(".labels.json")
+    output_units = int(model.output_shape[-1])
+
+    if label_path.exists():
+        try:
+            with label_path.open("r", encoding="utf-8") as f:
+                payload = json.load(f)
+            class_order = payload.get("class_order")
+            if isinstance(class_order, list) and len(class_order) == output_units:
+                class_order_vi = [DEFAULT_VI_TRANSLATIONS.get(name, name) for name in class_order]
+                return class_order, class_order_vi
+        except Exception:
+            pass
+
+    if output_units == 8:
+        return DEFAULT_CLASS_ORDER_8, DEFAULT_CLASS_ORDER_8_VI
+
+    if output_units == 4:
+        return DEFAULT_CLASS_ORDER_4, DEFAULT_CLASS_ORDER_4_VI
+
+    fallback = [f"Class {index + 1}" for index in range(output_units)]
+    return fallback, fallback
 
 RAVDESS_MAP = {
     "01": "Neutral",
@@ -29,7 +67,21 @@ def parse_label(name: str):
     return RAVDESS_MAP.get(m.group(3), None)
 
 
-model = tf.keras.models.load_model('model/speech_emotion_lstm_improved.keras', compile=False)
+MODEL_CANDIDATES = [
+    'model/speech_emotion_lstm_8classes.keras',
+    'model/speech_emotion_lstm_improved.keras',
+    'model/speech_emotion_lstm_4classes.keras',
+]
+
+for candidate in MODEL_CANDIDATES:
+    if Path(candidate).exists():
+        model_path = candidate
+        model = tf.keras.models.load_model(model_path, compile=False)
+        break
+else:
+    raise FileNotFoundError('Không tìm thấy model hợp lệ trong thư mục model/.')
+
+EMOTIONS, EMOTIONS_VI = resolve_class_labels(model, model_path)
 folder = Path(r'e:\Actor_01')
 files = sorted(folder.glob('*.wav'))[:20]
 
