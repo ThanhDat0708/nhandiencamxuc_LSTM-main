@@ -17,21 +17,7 @@ except ModuleNotFoundError:
 # Import đúng từ utils
 from utils.feature_extraction import extract_features
 from utils.preprocessing import validate_input_shape, extract_mfcc_only
-from streamlit_webrtc import webrtc_streamer, WebRtcMode
-import av
-import queue
-
-# Queue lưu audio frames từ mic để xử lý
-_audio_q = queue.Queue()
-
-
-def audio_frame_callback(frame: av.AudioFrame) -> None:
-    # Chuyển frame thành numpy array mono
-    pcm = frame.to_ndarray().astype('float32')
-    # Nếu stereo, lấy kênh đầu
-    if pcm.ndim > 1:
-        pcm = pcm[0]
-    _audio_q.put(pcm)
+# Microphone recording (WebRTC) removed per user request.
 
 # ========================= CONFIG =========================
 st.set_page_config(
@@ -254,59 +240,14 @@ with col1:
 with col2:
     st.subheader("📋 Hướng dẫn")
     st.markdown("---")
-    st.subheader("🎙️ Hoặc thu âm trực tiếp từ mic")
-
-    webrtc_ctx = webrtc_streamer(
-        key="speech-emotion-mic",
-        mode=WebRtcMode.SENDONLY,
-        audio_receiver_size=256,
-        media_stream_constraints={"audio": True, "video": False},
-        async_processing=True,
-        audio_frame_callback=audio_frame_callback,
+    st.markdown(
+        """
+        • Upload file âm thanh rõ ràng (.wav, .mp3, .ogg, .m4a).  
+        • Độ dài tốt nhất: 2 - 5 giây.  
+        • Môi trường yên tĩnh → kết quả chính xác hơn.  
+        
+        Ghi chú: tính năng thu âm trực tiếp từ microphone đã được tắt theo yêu cầu.
+        """
     )
-
-    if st.button("🔴 Ghi 3s và dự đoán từ mic"):
-        st.info("Đang ghi 3 giây từ mic...")
-        import time
-        frames = []
-        start = time.time()
-        while time.time() - start < 3.0:
-            try:
-                pcm = _audio_q.get(timeout=1.0)
-                frames.append(pcm)
-            except queue.Empty:
-                break
-
-        if len(frames) == 0:
-            st.error("Không ghi được âm thanh từ mic. Kiểm tra quyền truy cập microphone.")
-        else:
-            audio = np.concatenate(frames)
-            # Lưu tạm file wav
-            import soundfile as sf, tempfile
-            tmpf = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
-            sf.write(tmpf.name, audio, 22050)
-
-            with st.spinner("Đang trích xuất đặc trưng và dự đoán..."):
-                use_trimmed = feature_mode in ("trimmed", "ensemble")
-
-                prediction, predicted_idx, confidence, chosen_mode = predict_audio_file(
-                    tmpf.name,
-                    use_trimmed_features=use_trimmed,
-                )
-                if prediction is None:
-                    st.error("Không trích xuất được đặc trưng hợp lệ từ mic.")
-                else:
-                    emotion = CLASS_ORDER_VI[predicted_idx] if use_vietnamese else CLASS_ORDER[predicted_idx]
-
-                    st.success(f"**Cảm xúc dự đoán: {emotion}**")
-                    st.metric("Độ tin cậy", f"{confidence * 100:.1f}%")
-                    st.caption(f"Chế độ dùng: {chosen_mode}")
-
-            os.unlink(tmpf.name)
-    st.markdown("""
-    • File âm thanh nên rõ ràng, có giọng nói  
-    • Độ dài tốt nhất: 2 - 5 giây  
-    • Môi trường yên tĩnh → kết quả chính xác hơn
-    """)
 
 st.caption("Speech Emotion Recognition | CNN + BiLSTM | Keras 3")
