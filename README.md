@@ -9,10 +9,6 @@ Hệ thống nhận diện cảm xúc từ giọng nói (Speech Emotion Recognit
 - **Mô hình Deep Learning**: Sử dụng LSTM để học các mẫu cảm xúc phức tạp
 - **Giao diện Web**: Ứng dụng Streamlit dễ sử dụng để test hệ thống
 
-## 🚀 Test Hệ Thống
-Bạn có thể test hệ thống nhận diện cảm xúc từ giọng nói qua ứng dụng Streamlit:
-
-🔗 **[Test hệ thống tại đây](https://nhandiencamxuclstm-ufgyhsghjbfrqjon9w2rsu.streamlit.app/)**
 
 Chỉ cần upload file âm thanh (định dạng: WAV, MP3, OGG) và hệ thống sẽ tự động phân loại cảm xúc.
 Mô hình huấn luyện mặc định hiện nhắm tới 8 lớp RAVDESS.
