@@ -21,7 +21,7 @@ def _build_mfcc_features(audio_path, max_len=220, n_mfcc=40, sr=22050, trim_sile
         n_fft=2048,
         hop_length=512,
         window='hann',
-        center=True,
+        center=True, 
     )
 
     if mfcc.shape[1] > max_len:
